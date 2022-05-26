@@ -693,11 +693,9 @@ Since Sonarqube cannot be run as root user, we have to create a **sonar** user t
 - Repeat the above steps to add more servers ![](imgs/jenkins-nodes.png)
 
 ## Step 5: Configure GitHub WebHook for Automatic Build of Pushed Code
-[![Watch the video](imgs/webhook.png)](https://drive.google.com/file/d/1gaR43fdd3nGOi85pcp4GgcHQAv92A4Df/view?usp=sharing)
+
 
 ## Step 6: Deploy to all Environments
-![](imgs/endtoend.png)
 
-![Instances](imgs/instances.png)
 
  
