@@ -310,8 +310,9 @@ Most commonly used tool for php code quality analysis is **phploc**
           }
         }
   ```
+   ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/26.PNG)
   CLick on the Plots button on the left pane. If everything was configured properly, you should see something like this:
-  ![](imgs/plots.png)
+ ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/27.PNG)
 
 - Package the artifacts 
   ```
@@ -340,7 +341,7 @@ Most commonly used tool for php code quality analysis is **phploc**
   }
   ```
   **Blocker:** For this to work, you have to create a local repository on your Artifactory with package type as Generic and Repository Key as the name of the repo (php-todo in this case)
-  ![](imgs/arti-deploy.png)
+ ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/28.PNG)
 
 - Deploy application to dev environment by launching the Ansible pipeline 
   ```
@@ -371,7 +372,7 @@ Software Quality Gates - Quality gates are basically acceptance criteria which a
   sonarqube   -   nofile   65536
   sonarqube   -   nproc    4096
   ```
-  **Blocker:** I noticed that running SonarQube is quite compute intensive, so I used a t2.medium instance instead of a t2.micro. And the **sudo sysctl -w vm.max_map_count=262144** does not make the vm.max_map_count change persist after boot (for some odd reason), so I had to append the command to the /**etc/bash.bashrc** file.
+  
 
 ### Step 3.2: Update system packages and Install Java and other required packages
 - Update and upgrade packages
@@ -396,6 +397,8 @@ Software Quality Gates - Quality gates are basically acceptance criteria which a
     ```
     java -version
     ```
+    ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/30.PNG)
+    
 ### Step 3.3: Install and Setup PostgreSQL 10 Database for SonarQube
 - Add PostgreSQL to repo list
   ```
@@ -414,6 +417,8 @@ Software Quality Gates - Quality gates are basically acceptance criteria which a
   sudo systemctl start postgresql
   sudo systemctl enable postgresql
   ```
+    ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/31.PNG)
+    
 - Change the default password for postgres user (to whatever password you can easily remember)
   ```
   sudo passwd postgres
@@ -452,6 +457,8 @@ Software Quality Gates - Quality gates are basically acceptance criteria which a
   exit
   ```
 
+  ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/32.PNG)
+  
 ### Step 3.4: Install and configure SonarQube
 - Download temporary files to /tmp folder
   ```
@@ -507,6 +514,8 @@ Since Sonarqube cannot be run as root user, we have to create a **sonar** user t
 
     Started SonarQube
     ```
+    
+    ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/33.PNG)
   - Check SonarQube logs
     ```
     tail /opt/sonarqube/logs/sonar.log
@@ -544,12 +553,18 @@ Since Sonarqube cannot be run as root user, we have to create a **sonar** user t
       WantedBy=multi-user.target
       ```
       Save and exit
+      
+        ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/34.PNG)
+        
     - Use systemd to manage the service
       ```
       sudo systemctl start sonar
       sudo systemctl enable sonar
       sudo systemctl status sonar
       ```
+      
+    ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/35.PNG)
+        
 ### Step 3.5: Access Sonarqube
 - Access the SonarQube by going to http://\<sonar-qube-ip>/9000, use **admin** as your username and password
 ![](imgs/sonar.png)
@@ -561,13 +576,17 @@ Since Sonarqube cannot be run as root user, we have to create a **sonar** user t
   - In the name field, enter **sonarqube**
   - For server URL, enter the IP of your SonarQube instance
 - Generate authentication tokens to use in the Jenkins UI
+-   ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/36.PNG)
+-   
   - In SonarQube UI, navigate to User > My Account > Security > Generate tokens
   - Type in the name of the token and click Generate
 
-- Configure SonarQube webhook for Jenkins
+  ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/37.PNG)
+  - Configure SonarQube webhook for Jenkins
   -  Navigate to Administration > Configuration > Webhooks > Create
   - Enter the name
   - Enter URL as http://\<jenkins-server-ip>:8080/sonar-webhook/
+  -   ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/38.PNG)
 
 - Setup SonarScanner for Jenkins
   - In Jenkins UI, go to Manage Jenkins > Global Tool Configuration
@@ -590,112 +609,22 @@ Since Sonarqube cannot be run as root user, we have to create a **sonar** user t
         }
     }
   ```
+    ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/39.PNG)
+    
   Save and run the pipeline to install the scanner (you might get an error initially)
+  
+![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/41.PNG)
 
-- Edit sonar-scanner.properties file
-  ```
-  sudo vim /var/lib/jenkins/tools/hudson.plugins.sonar.SonarRunnerInstallation/SonarQubeScanner/conf/sonar-scanner.properties
-  ```
-  Paste in the following lines:
-  ```
-  sonar.host.url=http://<SonarQube-Server-IP-address>:9000
-  sonar.projectKey=php-todo
-  #----- Default source code encoding
-  sonar.sourceEncoding=UTF-8
-  sonar.php.exclusions=**/vendor/**
-  sonar.php.coverage.reportPaths=build/logs/phploc.csv
-  sonar.php.tests.reportPath=reports/unitreport.xml
-  ```
-  Install xdebug and configure the ini file, you can get the path to the file by running
-  ```
-  php --ini | grep xdebug
-  ```
-  And paste in:
-  ```
-  xdebug.mode=coverage
-  ```
-  **Blocker:** the sonar.php.coverage.reportPaths and sonar.php.tests.reportPath should point to the files in build/coverage/ or else the Quality Gate would be incomplete
-- To generate pipleline code from Jenkins UI, go to Dashboard, click on the pipeline project (php-todo) and scroll down to Pipeline Syntax
-- If everything was configured properly, you should see something like this: ![](imgs/endtoend.png)
-- Navigate to your php-todo dashboard on SonarQube UI ![](imgs/qualitygate.png)
+- Navigate to your php-todo dashboard on SonarQube UI 
+   ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/42.PNG)
 
 ### Step 3.7: Conditionally Deploy to Higher Environments
-- Include a **when** condition to execute the Quality Gate stage only when the running branch is develop, hotfix, release, main or master
-  ```
-  when { branch pattern: "^develop*|^hotfix*|^release*|^main*", comparator: "REGEXP"}
-  ```
-- Add a timeout step to abort to Quality Gate stage after 1 minute (or any time you like)
-  ```
-      timeout(time: 1, unit: 'MINUTES') {
-        waitForQualityGate abortPipeline: true
-    }
-  ```
-  Quality Gate stage snippet should look like this:
-  ```
-  stage('SonarQube Quality Gate') {
-      when { branch pattern: "^develop*|^hotfix*|^release*|^main*", comparator: "REGEXP"}
-        environment {
-            scannerHome = tool 'SonarQubeScanner'
-        }
-        steps {
-            withSonarQubeEnv('sonarqube') {
-                sh "${scannerHome}/bin/sonar-scanner -Dproject.settings=sonar-project.properties"
-            }
-            timeout(time: 1, unit: 'MINUTES') {
-                waitForQualityGate abortPipeline: true
-            }
-        }
-    }
-  ```
-  You should get the following when you run the pipeline:
-  ![](imgs/timeout.png)
-  For specific branches (Quality Gate does not execute I am running from 'testing' branch):
-  ![](imgs/branch-testing.png)
 
+   ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/43.PNG)
+   
 ## Step 4: Configure Jenkins slave servers
-- Spin up a new EC2 Instance
-  - Install Java and Jenkins
-  - Install necessary packages from Steps 1.4, 2.3 Blocker and 2.4
-  - Create new user to be used by jenkins
-    ```
-    sudo useradd -d /var/lib/jenkins jenkins
-    sudo passwd jenkins
-    ```
-  - Create the default root directory and set permissions
-    ```
-    sudo mkdir /var/lib/jenkins
-    sudo chown -R jenkins:jenkins /var/lib/jenkins
-    ```
-  - Generate SSH Key for jenkins to use when logging in
-    ```
-    su - jenkins
-    ssh-keygen -t rsa -C "Jenkins agent key"
-    ```
-  - Add id_rsa.pub to authorized_keys file
-    ```
-    # cat ~/.ssh/id_rsa.pub >> ~/.ssh/authorized_keys
-    # chmod 600 ~/.ssh/authorized_keys
-    ```
-  - Copy SSH private key to clipboard
-    ```
-    cat ~/.ssh/id_rsa
-- On the main Jenkins server
-  - Navigate to Manage Jenkins > Manage Nodes
-  - Click New Node
-  - Enter name of the node and click the 'Permanent Agent' button and click the OK button
-  - Fill in the remote root directory as /var/lib/jenkins
-  - Set 'Host' value as the IP of the slave node
-  - For Launch Method, select Launch Agents via SSH
-  - Add new Jenkins SSH with username and private key credentials with username as jenkins and private key as the private key you copied from the node
-  - For Host Key Verification Strategy, select Manually trusted key validation strategy
-  - Click Save
+ ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/45.PNG)
 
-- Repeat the above steps to add more servers ![](imgs/jenkins-nodes.png)
-
-## Step 5: Configure GitHub WebHook for Automatic Build of Pushed Code
-
-
-## Step 6: Deploy to all Environments
-
+ ![alt text](https://github.com/Ellawangari/DevOps-project14/blob/main/imgs/46.PNG)
 
  
